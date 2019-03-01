@@ -115,7 +115,8 @@ ipc.on('deploy-segments', function (event, data) {
 	win.webContents.send('connecting');
 	// Connect to the robot
 	sftp.connect({
-		host: 'roborio-' + data.team + '-frc.local',
+		//host: 'roborio-' + data.team + '-frc.local',
+		host: '10.8.36.2', // Hard coded to Robo Bee's IP address
 		username: 'lvuser',
 		readyTimeout: 5000
 	}).then(() => {

@@ -210,6 +210,9 @@ class RobotPath {
 		var start = new Date().getTime();
 		this.path = new Path(join(points, joinStep), points[0], preferences.p_useMetric ? Util.pixelsPerMeter : Util.pixelsPerFoot);
 		this.velocities = velocities;
+		for (var i = 0; i < velocities.length; i++) {
+			//log.info('Hamster: (velocities) ' + velocities[i]);
+		}
 		this.pathSegments = this.path.group;
 		this.timeSegments = new SegmentGroup();
 		this.left = new SegmentGroup();
@@ -237,6 +240,9 @@ class RobotPath {
 	calculateMaxVelocity() {
 		log.info('    Calculating max velocity on curve...');
 		var start = new Date().getTime();
+		//log.info('Hamster: ' + this.pathSegments.segments.length);
+		const numSegments = Math.round(1 / joinStep);
+		//log.info('Hamster: numSegments: ' + numSegments);
 		for (var i = 0; i < this.pathSegments.segments.length; i++) {
 			var r;
 			if (i == this.path.group.segments.length - 1) {
@@ -248,9 +254,11 @@ class RobotPath {
 			}
 			if (!isFinite(r) || isNaN(r)) {
 				this.pathSegments.segments[i].vel = this.maxVel;
-
-				const numSegments = Math.round(1 / joinStep);
-				if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
+				
+				//this.pathSegments.segments[i].vel = this.maxVel;
+				
+				//const numSegments = Math.round(1 / joinStep);
+				/*if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
 					const index = i + (numSegments - (i % numSegments));
 					const velIndex = ((index - numSegments) / numSegments) + 1;
 					this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, this.velocities[velIndex]);
@@ -258,13 +266,14 @@ class RobotPath {
 					const index = i - (i % numSegments);
 					const velIndex = ((index - numSegments) / numSegments) + 1;
 					this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, this.velocities[velIndex]);
-				}
+				}*/
 			} else {
 				// Calculate max velocity on curve given the coefficient of friction between wheels and carpet
 				var maxVCurve = Math.sqrt(this.mu * 9.8 * r);
-				this.pathSegments.segments[i].vel = Math.min(maxVCurve, this.maxVel);
+				this.pathSegments.segments[i].vel = maxVCurve;
+				/*this.pathSegments.segments[i].vel = Math.min(maxVCurve, this.maxVel);
 
-				const numSegments = Math.round(1 / joinStep);
+				//const numSegments = Math.round(1 / joinStep);
 				if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
 					const index = i + (numSegments - (i % numSegments));
 					const velIndex = ((index - numSegments) / numSegments) + 1;
@@ -273,8 +282,9 @@ class RobotPath {
 					const index = i - (i % numSegments);
 					const velIndex = ((index - numSegments) / numSegments) + 1;
 					this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, this.velocities[velIndex]);
-				}
+				}*/
 			}
+			//log.info('Hamster: (Curve Vel): ' + this.pathSegments.segments[i].vel);
 		}
 		log.info('        DONE IN: ' + (new Date().getTime() - start) + 'ms');
 	}
@@ -314,13 +324,19 @@ class RobotPath {
 		var p = this.pathSegments.segments;
 		p[0].vel = 0;
 		var time = 0;
+		const numSegments = Math.round(1 / joinStep);
 		var start1 = new Date().getTime();
 		for (var i = 1; i < p.length; i++) {
-			var v0 = p[i - 1].vel;
+			var modSegment = (i % numSegments);
+			var previousVel = this.velocities[Math.floor(i/numSegments)];
+			var nextVel = this.velocities[Math.floor(i/numSegments) + 1];
+			//if (modSegment == 0) {// && previousVel != this.maxVel) {
+			var v0 = Math.min(previousVel, p[i-1].vel);
+			//log.info('Hamster1: ' + modSegment + ', ' + Math.floor(i/numSegments) + ', ' + previousVel + ', ' + nextVel + ', ' + p[i-1].vel);
 			var dx = p[i - 1].dx;
 			if (dx > 0) {
 				var vMax = Math.sqrt(Math.abs(v0 * v0 + 2 * this.maxAcc * dx));
-				var v = Math.min(vMax, p[i].vel);
+				var v = Math.min(vMax, this.maxVel, p[i].vel);
 				if (isNaN(v)) {
 					v = p[i - 1].vel;
 				}
@@ -328,15 +344,29 @@ class RobotPath {
 			} else {
 				p[i].vel = p[i - 1].vel;
 			}
+			//log.info('Hamster: ' + modSegment + ', ' + Math.floor(i/numSegments) + ', ' + previousVel + ', ' + nextVel + ', ' + p[i].vel);
 		}
 		log.info('1: ' + (new Date().getTime() - start1) + 'ms');
 		var start2 = new Date().getTime();
-		p[p.length - 1].vel = 0;
+		// Changed this line for varrying end velocities
+		//p[p.length - 1].vel = 0;
+		// ---------------------------------------------
+		//log.info('Hamster: ' + this.velocities[this.velocities.length - 1] + ', ' + this.maxVel + ', ' + p[p.length - 1].vel);
+		//log.info('Hamster: ' + p.length);
+		if(this.velocities[this.velocities.length - 1] == this.maxVel) {
+			p[p.length - 1].vel = 0;
+		} else {
+			p[p.length - 1].vel = this.velocities[this.velocities.length - 1];
+		}
+		
 		for (i = p.length - 2; i > 1; i--) {
 			var v0 = p[i + 1].vel;
 			var dx = p[i + 1].dx;
 			var vMax = Math.sqrt(Math.abs(v0 * v0 + 2 * this.maxAcc * dx));
+			//log.info('Hamster: (rev V0) ' + p[i].vel + ', ' + vMax + ', ' + v0 + ', ' + dx);
 			p[i].vel = Math.min((isNaN(vMax) ? this.maxVel : vMax), p[i].vel);
+			//p[i].vel = Math.min((isNaN(vMax) ? this.maxVel : vMax), this.maxVel);
+			//log.info('Hamster: (V) ' + (i % numSegments) + ', ' + p[i].vel);
 		}
 		log.info('2: ' + (new Date().getTime() - start2) + 'ms');
 		var start3 = new Date().getTime();
