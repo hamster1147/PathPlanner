@@ -37,7 +37,7 @@ app.on('ready', function () {
 	createWindow();
 	if (is.production()) {
 		if (is.windows()) {
-			if (!is.windowsStore()) autoUpdater.checkForUpdates();
+			//if (!is.windowsStore()) autoUpdater.checkForUpdates();
 		}
 	}
 });
@@ -65,7 +65,7 @@ autoUpdater.on('update-downloaded', (info) => {
 
 // Update the app when the user clicks the restart button
 ipc.on('quit-and-install', (event, data) => {
-	autoUpdater.quitAndInstall();
+	//autoUpdater.quitAndInstall();
 });
 
 // Create a hidden window to generate the path to avoid delaying the main window
