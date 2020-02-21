@@ -8,9 +8,7 @@ const store = new Store({name: 'settings', cwd: home + '/.PathPlanner'});
  */
 class Preferences {
 	constructor() {
-		this.p_maxVel = store.get('maxVel', 8.0);
-		this.p_maxAcc = store.get('maxAcc', 5.0);
-		this.p_mu = store.get('mu', 0.77);
+		// this.p_mu = store.get('mu', 0.77);
 		this.p_wheelbaseWidth = store.get('wheelbaseWidth', 2.0);
 		this.p_robotLength = store.get('robotLength', 3.0);
 		this.p_timeStep = store.get('timeStep', 0.01);
@@ -21,29 +19,16 @@ class Preferences {
 		this.p_teamNumber = store.get('teamNumber', 0);
 		this.p_rioPathLocation = store.get('deployLocation', '/home/lvuser/paths');
 		this.p_useMetric = store.get('useMetric', false);
-		this.p_gameYear = store.get('gameYear', '19');
+		this.maxVel = (this.p_useMetric) ? 2.5 : 8.0;
+		this.maxAcc = (this.p_useMetric) ? 1.5 : 5.0;
+		this.p_gameYear = store.get('gameYear', '20');
 		this.p_splitPath = store.get('splitPath', true);
 		this.currentPathName = "path";
+		this.csvHeader = null;
 	}
 
 	get lastRunVersion() {
 		return store.get('version', '0.0.0');
-	}
-
-	get uid() {
-		return store.get('uid');
-	}
-
-	get maxVel() {
-		return this.p_maxVel;
-	}
-
-	get maxAcc() {
-		return this.p_maxAcc;
-	}
-
-	get mu() {
-		return this.p_mu;
 	}
 
 	get wheelbaseWidth() {
@@ -96,25 +81,6 @@ class Preferences {
 
 	set lastRunVersion(value) {
 		store.set('version', value);
-	}
-
-	set uid(value) {
-		store.set('uid', value);
-	}
-
-	set maxVel(value) {
-		store.set('maxVel', value);
-		this.p_maxVel = value;
-	}
-
-	set maxAcc(value) {
-		store.set('maxAcc', value);
-		this.p_maxAcc = value;
-	}
-
-	set mu(value) {
-		store.set('mu', value);
-		this.p_mu = value;
 	}
 
 	set wheelbaseWidth(value) {

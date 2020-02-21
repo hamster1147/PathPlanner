@@ -7,13 +7,13 @@ class PlannedPath {
 	 */
 	constructor() {
 		this.points = [];
+		this.velocities = [];
 		this.points.push(new Vector2(5.5 * Util.pixelsPerFoot + Util.xPixelOffset, 10.0 * Util.pixelsPerFoot + Util.yPixelOffset));
 		this.points.push(new Vector2(10.5 * Util.pixelsPerFoot + Util.xPixelOffset, 10.0 * Util.pixelsPerFoot + Util.yPixelOffset));
 		this.points.push(new Vector2(19.175 * Util.pixelsPerFoot + Util.xPixelOffset, 10.5 * Util.pixelsPerFoot + Util.yPixelOffset));
 		this.points.push(new Vector2(19.175 * Util.pixelsPerFoot + Util.xPixelOffset, 4.5 * Util.pixelsPerFoot + Util.yPixelOffset));
-		this.velocities = [];
-		this.velocities.push(preferences.maxVel);
-		this.velocities.push(preferences.maxVel);
+		this.velocities.push(-1);
+		this.velocities.push(-1);
 	}
 
 	/**
@@ -56,9 +56,30 @@ class PlannedPath {
 	 */
 	addSpline(anchorPos) {
 		this.points.push(Vector2.subtract(Vector2.multiply(this.points[this.points.length - 1], 2), this.points[this.points.length - 2]));
-		this.points.push(Vector2.multiply(Vector2.add(this.points[this.points.length - 1], new Vector2(anchorPos.x, anchorPos.y)), 0.5))
+		this.points.push(Vector2.multiply(Vector2.add(this.points[this.points.length - 1], new Vector2(anchorPos.x, anchorPos.y)), 0.5));
 		this.points.push(new Vector2(anchorPos.x, anchorPos.y));
-		this.velocities.push(preferences.maxVel);
+		this.velocities.push(-1);
+	}
+
+	/**
+	 * Insert a new spline into the path
+	 * @param anchorPos The pos of the new anchor point
+	 * @param index The index to insert the spline at
+	 */
+	insertSpline(anchorPos, index){
+		let control1 = Vector2.multiply(Vector2.add(this.points[index - 1], new Vector2(anchorPos.x, anchorPos.y)), 0.5);
+		// let control1 = new Vector2(anchorPos.x - 5, anchorPos.y - 5);
+		let anchor = new Vector2(anchorPos.x, anchorPos.y);
+		// let control2 = new Vector2(anchorPos.x + 5, anchorPos.y + 5);
+		let control2 = Vector2.subtract(Vector2.multiply(anchor, 2), control1);
+		if(index === 2){
+			this.velocities.splice(1, 0, -1);
+		}else if(index === this.points.length - 2){
+			this.velocities.splice(this.velocities.length - 2, 0, -1);
+		}else{
+			this.velocities.splice(this.anchorIndexToVelocity(index + 1), 0, -1);
+		}
+		this.points.splice(index, 0, control1, anchor, control2);
 	}
 
 	/**
@@ -67,7 +88,7 @@ class PlannedPath {
 	 * @param newPos The new position of the point
 	 */
 	movePoint(i, newPos) {
-		var deltaMove = Vector2.subtract(newPos, this.points[i]);
+		const deltaMove = Vector2.subtract(newPos, this.points[i]);
 		this.points[i] = newPos;
 
 		if (i % 3 === 0) {
@@ -78,13 +99,13 @@ class PlannedPath {
 				this.points[i - 1] = Vector2.add(this.points[i - 1], deltaMove);
 			}
 		} else {
-			var nextIsAnchor = (i + 1) % 3 == 0;
-			var correspondingControlIndex = (nextIsAnchor) ? i + 2 : i - 2;
-			var anchorIndex = (nextIsAnchor) ? i + 1 : i - 1;
+			const nextIsAnchor = (i + 1) % 3 === 0;
+			const correspondingControlIndex = (nextIsAnchor) ? i + 2 : i - 2;
+			const anchorIndex = (nextIsAnchor) ? i + 1 : i - 1;
 
 			if (correspondingControlIndex >= 0 && correspondingControlIndex < this.points.length) {
-				var dst = Vector2.subtract(this.points[anchorIndex], this.points[correspondingControlIndex]).getMagnitude();
-				var dir = Vector2.subtract(this.points[anchorIndex], newPos).normalized();
+				const dst = Vector2.subtract(this.points[anchorIndex], this.points[correspondingControlIndex]).getMagnitude();
+				const dir = Vector2.subtract(this.points[anchorIndex], newPos).normalized();
 				this.points[correspondingControlIndex] = Vector2.add(this.points[anchorIndex], Vector2.multiply(dir, dst));
 			}
 		}
@@ -95,10 +116,10 @@ class PlannedPath {
 	 * @param anchorIndex The index of the anchor point in the spline
 	 */
 	deleteSpline(anchorIndex) {
-		if (anchorIndex % 3 == 0 && this.numSplines() > 1) {
-			if (anchorIndex == 0) {
+		if (anchorIndex % 3 === 0 && this.numSplines() > 1) {
+			if (anchorIndex === 0) {
 				this.points.splice(0, 3);
-			} else if (anchorIndex == this.points.length - 1) {
+			} else if (anchorIndex === this.points.length - 1) {
 				this.points.splice(anchorIndex - 2, 3);
 			} else {
 				this.points.splice(anchorIndex - 1, 3);
@@ -131,7 +152,7 @@ class PlannedPath {
 	 * @returns {number} The velocity index
 	 */
 	anchorIndexToVelocity(anchorIndex) {
-		if (anchorIndex == 0) {
+		if (anchorIndex === 0) {
 			return 0;
 		} else {
 			return ((anchorIndex - 3) / 3) + 1;

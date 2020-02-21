@@ -1,7 +1,9 @@
 // Numbers used for converting from pixels to feet and vice versa
 const pixelsPerFoot = 20.15;
 const pixelsPerMeter = pixelsPerFoot / 0.3048;
-const xPixelOffset = 56;
+const xOffsetNormal = 56;
+const xOffset20 = 76.15;
+let xPixelOffset = xOffsetNormal;
 const yPixelOffset = 78;
 
 class Vector2 {
@@ -97,8 +99,8 @@ class Util {
 	 * @returns {Vector2} The interpolated point
 	 */
 	static quadraticCurve(a, b, c, t) {
-		var p0 = Util.lerp(a, b, t);
-		var p1 = Util.lerp(b, c, t);
+		const p0 = Util.lerp(a, b, t);
+		const p1 = Util.lerp(b, c, t);
 		return Util.lerp(p0, p1, t);
 	}
 
@@ -112,8 +114,8 @@ class Util {
 	 * @returns {Vector2} The interpolated point
 	 */
 	static cubicCurve(a, b, c, d, t) {
-		var p0 = Util.quadraticCurve(a, b, c, t);
-		var p1 = Util.quadraticCurve(b, c, d, t);
+		const p0 = Util.quadraticCurve(a, b, c, t);
+		const p1 = Util.quadraticCurve(b, c, d, t);
 		return Util.lerp(p0, p1, t);
 	}
 
@@ -124,8 +126,8 @@ class Util {
 	 * @returns {number} The slope
 	 */
 	static slope(a, b) {
-		var dy = a.y - b.y;
-		var dx = a.x - b.x;
+		const dy = a.y - b.y;
+		const dx = a.x - b.x;
 		return dy / dx;
 	}
 
@@ -137,16 +139,16 @@ class Util {
 	 * @returns {Vector2} The closest point on the line
 	 */
 	static closestPointOnLine(lineStart, lineEnd, p) {
-		var dx = lineEnd.x - lineStart.x;
-		var dy = lineEnd.y - lineStart.y;
+		const dx = lineEnd.x - lineStart.x;
+		const dy = lineEnd.y - lineStart.y;
 
 		if (dx === 0 === dy) {
 			return lineStart;
 		}
 
-		var t = ((p.x - lineStart.x) * dx + (p.y - lineStart.y) * dy) / (dx * dx + dy * dy);
+		const t = ((p.x - lineStart.x) * dx + (p.y - lineStart.y) * dy) / (dx * dx + dy * dy);
 
-		var closestPoint;
+		let closestPoint;
 		if (t < 0) {
 			closestPoint = lineStart;
 		} else if (t > 1) {
@@ -156,11 +158,25 @@ class Util {
 		}
 		return closestPoint;
 	}
+
+	/**
+	 * Give the distance between 2 points
+	 * @param point1 Point 1
+	 * @param point2 Point 2
+	 * @returns {number} The distance between the points
+	 */
+	static distanceBetweenPoints(point1, point2){
+		let a = point2.x - point1.x;
+		let b = point2.y - point1.y;
+		return Math.sqrt(a*a + b*b);
+	}
 }
 
 module.exports.Vector2 = Vector2;
 module.exports.Util = Util;
 module.exports.Util.xPixelOffset = xPixelOffset;
+module.exports.Util.xOffsetNormal = xOffsetNormal;
+module.exports.Util.xOffset20 = xOffset20;
 module.exports.Util.yPixelOffset = yPixelOffset;
 module.exports.Util.pixelsPerFoot = pixelsPerFoot;
 module.exports.Util.pixelsPerMeter = pixelsPerMeter;

@@ -8,17 +8,8 @@ log.transports.file.maxSize = 10 * 1024 * 1024;
 log.transports.file.file = homeDir + '/.PathPlanner/log.txt';
 log.transports.console.format = '[{m}/{d}][{h}:{i}:{s}] [{level}] {text}';
 const {autoUpdater} = require('electron-updater');
-const os = require('os');
-const semver = require('semver');
-const ua = require('universal-analytics');
-const uuid = require('uuid');
-const {JSONStorage} = require('node-localstorage');
 const {Preferences} = require('./js/preferences.js');
 const preferences = new Preferences();
-const nodeStorage = new JSONStorage(app.getPath('userData'));
-const userId = preferences.uid || nodeStorage.getItem('userId') || uuid();
-preferences.uid = userId;
-const usr = ua('UA-130095148-1', userId);
 const Client = require('ssh2-sftp-client');
 const sftp = new Client();
 const unhandled = require('electron-unhandled');
@@ -26,42 +17,36 @@ unhandled({logger: log.error, showDialog: true});
 const is = require('electron-is');
 let macFile;
 let win;
-
-/**
- * Track an event in google analytics
- * @param category the category of the event
- * @param action the event action
- * @param label the event label
- * @param value the event value
- */
-function trackEvent(category, action, label, value) {
-	usr.event(category, action, label, value).send();
-}
-
-global.trackEvent = trackEvent;
-
-/**
- * Track a screen view. Currently used to track when the app is launched
- */
-function trackScreen() {
-	usr.screenview({cd: 'PathPlanner', an: 'pathplanner', av: app.getVersion()}).send();
-}
+let shouldQuit = false;
 
 /**
  * Create the main window
  */
 function createWindow() {
-	win = new BrowserWindow({width: 1200, height: 745, icon: 'build/icon.png', frame: false, resizable: false});
+	win = new BrowserWindow({
+		width: 1200,
+		height: 745,
+		icon: 'build/icon.png',
+		frame: false,
+		resizable: false,
+		webPreferences: {
+			nodeIntegration: true
+		}
+	});
 	win.setMenu(null);
 	// win.webContents.openDevTools();
 	win.loadFile('pathplanner.html');
 
+	win.on('close', (e) => {
+		if(!shouldQuit) {
+			e.preventDefault();
+			win.webContents.send('close-requested');
+		}
+	});
+
 	win.on('closed', () => {
 		win = null;
 	});
-
-	trackScreen();
-	trackEvent('OS', os.platform());
 }
 
 // When the app is ready, create the window and check for updates if on windows
@@ -95,16 +80,25 @@ autoUpdater.on('update-downloaded', (info) => {
 	win.webContents.send('update-ready');
 });
 
+ipc.on('quit', (event, data) => {
+	shouldQuit = true;
+	app.quit();
+});
+
 // Update the app when the user clicks the restart button
 ipc.on('quit-and-install', (event, data) => {
 	autoUpdater.quitAndInstall();
-	trackEvent('User Interaction', 'Install Update')
 });
 
 // Create a hidden window to generate the path to avoid delaying the main window
 ipc.on('generate', function (event, data) {
 	log.info('Starting generation worker...');
-	var worker = new BrowserWindow({show: false});
+	let worker = new BrowserWindow({
+		show: false,
+		webPreferences: {
+			nodeIntegration: true
+		}
+	});
 	worker.loadFile('generate.html');
 	worker.on('ready-to-show', () => worker.webContents.send('generate-path', data));
 });

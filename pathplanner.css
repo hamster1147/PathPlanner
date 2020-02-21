@@ -67,6 +67,38 @@ a:focus{
 	background-color: #c62828;
 }
 
+#actions:hover a #actionIcon{
+	transition: 0.35s;
+	transform: rotateZ(-90deg);
+}
+
+#actions:hover #actionsBtn{
+	transform: scale(1.1);
+	transition: all ease 0.35s;
+}
+
+#actions ul li:hover{
+	transform: scale(1.15);
+	transition: all ease 0.35s;
+}
+
+#actions #actionsBtn,
+#actions ul li{
+	transform: scale(1.0);
+	transition: all ease 0.35s;
+}
+
+.wiggle:hover{
+	animation: wiggle 75ms infinite;
+	animation-timing-function: linear;
+}
+
+@keyframes wiggle {
+	0% { transform: translate(2px, 0); }
+	50% { transform: translate(-2px, 0); }
+	100% { transform: translate(2px, 0); }
+}
+
 .input-field{
 	margin-bottom: -10px !important;
 }
@@ -92,6 +124,11 @@ a:focus{
 }
 
 .split-switch{
+	margin-top: -15px !important;
+	margin-left: -20px !important;
+}
+
+.endVel-switch{
 	margin-top: -15px !important;
 	margin-left: -20px !important;
 }
@@ -138,7 +175,7 @@ nav {
 }
 
 #settings {
-	width: 35% !important;
+	width: 40% !important;
 	height: 70% !important;
 }
 
@@ -149,12 +186,19 @@ nav {
 
 #generateModal {
 	width: 35% !important;
-	height: 57% !important;
+	height: 68% !important;
 }
 
 #changesModal li{
 	font-weight: normal;
 	font-size: 16px;
+}
+
+#unsavedChangesModal {
+	width: 35% !important;
+	height: 30% !important;
+	top: 50% !important;
+	transform: translate(0, -50%) !important;
 }
 
 .tab{
