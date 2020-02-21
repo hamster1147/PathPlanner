@@ -35,7 +35,8 @@ function join(points, step, noLogging) {
 
 class RobotPath {
     constructor(points, velocities, preferences, reverse, noLogging) {
-        this.noLogging = noLogging;
+        //this.noLogging = noLogging;
+		this.noLogging = false;
         if(!this.noLogging) log.info('Generating path...');
         const start = new Date().getTime();
         this.xPixelOffset = (preferences.p_gameYear === '20') ? Util.xOffset20 : Util.xOffsetNormal;
@@ -80,6 +81,8 @@ class RobotPath {
             if (!isFinite(r) || isNaN(r)) {
                 this.pathSegments.segments[i].vel = this.maxVel;
 
+				// Hamster - Commented out all this stuff because its not a very good implementation of velocity override
+				
                 //const numSegments = Math.round(1 / joinStep);
                 //if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
                 //    const index = i + (numSegments - (i % numSegments));
@@ -100,6 +103,8 @@ class RobotPath {
                 const maxVCurve = Math.sqrt(this.maxAcc * (r - this.wheelbaseWidth / 2));
 
                 this.pathSegments.segments[i].vel = Math.min(maxVCurve, this.maxVel);
+
+				// Hamster - Commented out all this stuff because its not a very good implementation of velocity override
 
                 //const numSegments = Math.round(1 / joinStep);
                 //if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
@@ -149,15 +154,28 @@ class RobotPath {
         if(!this.noLogging) log.info('    Calculating velocity...');
         const start = new Date().getTime();
         let p = this.pathSegments.segments;
-        p[0].vel = 0;
+		
+		// Hamster - Sets the starting speed to the overrided velocity if it is given.
+        if(this.velocities[0] === -1){
+            p[0] = 0;
+        } else {
+			p[0].vel = this.velocities[0];
+		}
+		
         let time = 0;
+		const numSegments = Math.round(1 / joinStep);
         const start1 = new Date().getTime();
         for (let i = 1; i < p.length; i++) {
-            //const v0 = p[i - 1].vel;
-			modSegment = (i % numSegments);
-			var previousVel = this.velocities[Math.floor(i/numSegments)];
-			var nextVel = this.velocities[Math.floor(i/numSegments) + 1];
-			var v0 = Math.min(previousVel, p[i-1].vel);
+            // Figures out the current segments speed limit from the previous point's velocity override.
+			var modSegment = (i % numSegments);
+			var curSegment = Math.floor(i/numSegments);
+			var previousVel = this.velocities[curSegment];
+			var nextVel = this.velocities[curSegment + 1];
+			if (previousVel === -1 || curSegment === 0) {
+				var v0 = p[i-1].vel;
+			} else {
+				var v0 = Math.min(previousVel, p[i-1].vel);
+			}
             const dx = p[i - 1].dx;
             if (dx > 0) {
                 const vMax = Math.sqrt(Math.abs(v0 * v0 + 2 * this.maxAcc * dx));
@@ -172,6 +190,7 @@ class RobotPath {
         }
         if(!this.noLogging) log.info('1: ' + (new Date().getTime() - start1) + 'ms');
         const start2 = new Date().getTime();
+		// Set the end velocity for the entire path to the override velocity if it is set for backwards velocity calcs.
         if(this.velocities[this.velocities.length - 1] === -1){
             p[p.length - 1].vel = 0;
         } else {
