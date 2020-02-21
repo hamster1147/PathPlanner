@@ -80,16 +80,16 @@ class RobotPath {
             if (!isFinite(r) || isNaN(r)) {
                 this.pathSegments.segments[i].vel = this.maxVel;
 
-                const numSegments = Math.round(1 / joinStep);
-                if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
-                    const index = i + (numSegments - (i % numSegments));
-                    const velIndex = ((index - numSegments) / numSegments) + 1;
-                    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
-                } else if (i % numSegments <= Math.round(numSegments / 4)) {
-                    const index = i - (i % numSegments);
-                    const velIndex = ((index - numSegments) / numSegments) + 1;
-                    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
-                }
+                //const numSegments = Math.round(1 / joinStep);
+                //if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
+                //    const index = i + (numSegments - (i % numSegments));
+                //    const velIndex = ((index - numSegments) / numSegments) + 1;
+                //    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
+                //} else if (i % numSegments <= Math.round(numSegments / 4)) {
+                //    const index = i - (i % numSegments);
+                //    const velIndex = ((index - numSegments) / numSegments) + 1;
+                //    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
+                //}
             } else {
                 // Calculate max velocity on curve given the coefficient of friction between wheels and carpet
                 // var g = 9.8;
@@ -101,16 +101,16 @@ class RobotPath {
 
                 this.pathSegments.segments[i].vel = Math.min(maxVCurve, this.maxVel);
 
-                const numSegments = Math.round(1 / joinStep);
-                if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
-                    const index = i + (numSegments - (i % numSegments));
-                    const velIndex = ((index - numSegments) / numSegments) + 1;
-                    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
-                } else if (i % numSegments <= Math.round(numSegments / 4)) {
-                    const index = i - (i % numSegments);
-                    const velIndex = ((index - numSegments) / numSegments) + 1;
-                    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
-                }
+                //const numSegments = Math.round(1 / joinStep);
+                //if (i % numSegments >= numSegments - Math.round(numSegments / 4)) {
+                //    const index = i + (numSegments - (i % numSegments));
+                //    const velIndex = ((index - numSegments) / numSegments) + 1;
+                //    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
+                //} else if (i % numSegments <= Math.round(numSegments / 4)) {
+                //    const index = i - (i % numSegments);
+                //    const velIndex = ((index - numSegments) / numSegments) + 1;
+                //    this.pathSegments.segments[i].vel = Math.min(this.pathSegments.segments[i].vel, (this.velocities[velIndex] === -1) ? this.maxVel : this.velocities[velIndex]);
+                //}
             }
         }
         if(!this.noLogging) log.info('        DONE IN: ' + (new Date().getTime() - start) + 'ms');
@@ -153,7 +153,11 @@ class RobotPath {
         let time = 0;
         const start1 = new Date().getTime();
         for (let i = 1; i < p.length; i++) {
-            const v0 = p[i - 1].vel;
+            //const v0 = p[i - 1].vel;
+			modSegment = (i % numSegments);
+			var previousVel = this.velocities[Math.floor(i/numSegments)];
+			var nextVel = this.velocities[Math.floor(i/numSegments) + 1];
+			var v0 = Math.min(previousVel, p[i-1].vel);
             const dx = p[i - 1].dx;
             if (dx > 0) {
                 const vMax = Math.sqrt(Math.abs(v0 * v0 + 2 * this.maxAcc * dx));
@@ -170,7 +174,10 @@ class RobotPath {
         const start2 = new Date().getTime();
         if(this.velocities[this.velocities.length - 1] === -1){
             p[p.length - 1].vel = 0;
-        }
+        } else {
+			p[p.length - 1].vel = this.velocities[this.velocities.length - 1];
+		}
+		
         for (let i = p.length - 2; i > 1; i--) {
             const v0 = p[i + 1].vel;
             const dx = p[i + 1].dx;
